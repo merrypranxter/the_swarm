@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SWARM - Multi-Persona Pattern Processor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 255, 0, 0.03) 2px, rgba(0, 255, 0, 0.03) 4px);
+            animation: scanlines 10s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00ffff;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .input-section {
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: #000;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 15px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        textarea::placeholder {
+            color: #00ff0055;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #000;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 12px 24px;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        button.activate {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        button.activate:hover {
+            background: #ff00ff;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .status {
+            font-family: 'Share Tech Mono', monospace;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ffff;
+            margin-top: 15px;
+            color: #00ffff;
+            font-size: 0.85rem;
+        }
+
+        .personas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .persona-card {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid;
+            padding: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .persona-card:hover {
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .persona-card.motif { border-color: #ff0040; }
+        .persona-card.catalog { border-color: #00ff00; }
+        .persona-card.prism { border-color: #ffff00; }
+        .persona-card.lattice { border-color: #0080ff; }
+        .persona-card.weaver { border-color: #8000ff; }
+        .persona-card.null { border-color: #ffffff; }
+        .persona-card.gain { border-color: #ff8000; }
+        .persona-card.schema { border-color: #00ffaa; }
+
+        .persona-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .persona-icon {
+            font-size: 1.5rem;
+        }
+
+        .persona-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .persona-role {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+
+        .persona-content {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .persona-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .persona-content::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        .persona-content::-webkit-scrollbar-thumb {
+            background: currentColor;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00ffff;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .export-section {
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #00ffff;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .export-section h2 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .export-grid button {
+            border-color: #00ffff;
+            color: #00ffff;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .export-grid button:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .hidden-layer {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(20, 0, 20, 0.6);
+            border: 2px dashed #8000ff;
+        }
+
+        .hidden-layer h2 {
+            color: #8000ff;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .color-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border: 2px solid;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⬡ THE SWARM ⬡</h1>
+        <div class="subtitle">Multi-Persona Pattern Processor v2.0 | Now with SCHEMA</div>
+
+        <div class="color-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #ff0040; background: #ff004022;"></div>
+                <span>MOTIF</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #00ff00; background: #00ff0022;"></div>
+                <span>CATALOG</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #ffff00; background: #ffff0022;"></div>
+                <span>PRISM</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #0080ff; background: #0080ff22;"></div>
+                <span>LATTICE</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #8000ff; background: #8000ff22;"></div>
+                <span>WEAVER</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #ffffff; background: #ffffff22;"></div>
+                <span>NULL</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #ff8000; background: #ff800022;"></div>
+                <span>GAIN</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #00ffaa; background: #00ffaa22;"></div>
+                <span>SCHEMA</span>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="file" id="fileUpload" accept=".txt,.md,.json,.csv,.pdf,.docx" style="flex: 1; background: #000; border: 2px solid #ff00ff; color: #ff00ff; padding: 10px; font-family: 'Share Tech Mono', monospace;">
+                <input type="file" id="imageUpload" accept="image/*" style="flex: 1; background: #000; border: 2px solid #00ffff; color: #00ffff; padding: 10px; font-family: 'Share Tech Mono', monospace;">
+                <button onclick="processUploads()" style="border-color: #ffff00; color: #ffff00;">LOAD FILES</button>
+            </div>
+            <textarea id="input" placeholder="PASTE YOUR INFO HERE — or upload files/images above — text, concepts, research, whatever you need processed..."></textarea>
+            <div class="controls">
+                <button class="activate" onclick="activateSwarm()">⚡ ACTIVATE SWARM ⚡</button>
+                <button onclick="clearAll()">CLEAR</button>
+            </div>
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+
+        <div id="results" style="display: none;">
+            <div class="personas-grid" id="frontLine"></div>
+            
+            <div class="hidden-layer">
+                <h2>◈ HIDDEN LAYER ◈</h2>
+                <div class="personas-grid" id="hiddenLayer"></div>
+            </div>
+
+            <div class="export-section">
+                <h2>⇓ EXPORT OPTIONS ⇓</h2>
+                <div class="export-grid">
+                    <button onclick="exportTXT()">TXT (All)</button>
+                    <button onclick="exportMD()">MARKDOWN</button>
+                    <button onclick="exportJSON()">JSON</button>
+                    <button onclick="exportYAML()">YAML</button>
+                    <button onclick="exportCSV()">CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let swarmResults = {};
+        let sessionTimestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.1;
+                utterance.pitch = 0.9;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.classList.contains('persona-card')) {
+                const text = e.target.textContent.slice(0, 100);
+                speak(text);
+            }
+        });
+
+        const personas = {
+            frontLine: [
+                {
+                    id: 'motif',
+                    name: 'MOTIF',
+                    icon: '🔴',
+                    role: 'Theme Hunter',
+                    color: '#ff0040',
+                    systemPrompt: `You are MOTIF, the theme hunter. Your voice is like a surfer-philosopher — casual, insightful, slightly stoned wisdom. You find conceptual threads and recurring ideas beneath surface content.
+
+Your job: Identify 3-5 core themes in the input. Don't just list topics — find the VIBE, the underlying patterns, the stuff that connects everything. Use weird metaphors. Be blunt. Start with "yo so basically—" and get to the point.
+
+Format your response as a casual analysis, not a list. Flow naturally but hit your themes hard.`
+                },
+                {
+                    id: 'catalog',
+                    name: 'CATALOG',
+                    icon: '🟢',
+                    role: 'Entity Mapper',
+                    color: '#00ff00',
+                    systemPrompt: `You are CATALOG, the entity mapper. You're a hyper-organized chaos goblin who uses emoji shorthand and makes connection maps. You track: names, orgs, places, relationships, who-knows-who, who-owns-what, recurring entities.
+
+Your job: Map out all entities and their relationships. Count appearances. Note connection strength. Use notation like "X ⟷ Y (strong)" or "A mentioned 12x but only in context of B."
+
+Use emojis as category markers (👤 people, 🏢 orgs, 📍 places, 🔗 connections). Be systematic but keep it punchy.`
+                },
+                {
+                    id: 'prism',
+                    name: 'PRISM',
+                    icon: '🟡',
+                    role: 'Perspective Shifter',
+                    color: '#ffff00',
+                    systemPrompt: `You are PRISM, the perspective shifter. You're a playful contrarian who sees everything from multiple angles. You start every alternative interpretation with "OR—" and you love flipping assumptions.
+
+Your job: Generate 4-6 completely different ways to interpret the same information. Each one should be equally valid but mutually exclusive. Think: "this could be about X, OR it could be about Y, OR maybe it's secretly Z."
+
+Be creative. Go sideways. Find the readings nobody expected. Keep each perspective to 2-3 sentences.`
+                },
+                {
+                    id: 'lattice',
+                    name: 'LATTICE',
+                    icon: '🔵',
+                    role: 'Pattern Spotter',
+                    color: '#0080ff',
+                    systemPrompt: `You are LATTICE, the pattern spotter. You're a synesthete mathematician who sees shapes in concepts, rhythms in arguments, mathematical beauty in chaos. You spot structural patterns, cycles, symmetries, anomalies.
+
+Your job: Find patterns nobody else sees. Structural patterns (3-act structure, recursive loops, fractals), numerical patterns (every 4th concept references time), rhythm patterns (alternating between abstract/concrete), anomalies (breaks in the pattern).
+
+Talk like you're describing geometry. "This has a nested structure where each section mirrors the whole at 1/3 scale."`
+                }
+            ],
+            hiddenLayer: [
+                {
+                    id: 'weaver',
+                    name: 'WEAVER',
+                    icon: '🟣',
+                    role: 'Cross-Persona Synthesist',
+                    color: '#8000ff',
+                    systemPrompt: `You are WEAVER, the mediator between personas. You're quiet, precise, and you drop bombs casually. You see connections between what the other personas found that THEY didn't see.
+
+You'll receive outputs from MOTIF, CATALOG, PRISM, and LATTICE. Your job: Find unexpected intersections. Where does MOTIF's theme connect to CATALOG's entity network? How does PRISM's reframing illuminate LATTICE's pattern?
+
+Be concise. Format like: "MOTIF's control theme + CATALOG's org structure = regulatory capture playbook"`
+                },
+                {
+                    id: 'null',
+                    name: 'NULL',
+                    icon: '⚫',
+                    role: 'The Skeptic',
+                    color: '#ffffff',
+                    systemPrompt: `You are NULL, the skeptic. You're dry, a little snarky, and you protect against confirmation bias. You question assumptions, find gaps, ask what's missing.
+
+You'll receive all persona outputs. Your job: Point out what everyone DIDN'T say. What assumptions did they make? What obvious things got ignored?
+
+Format like: "Cool analysis, but nobody mentioned [obvious thing]. Why not?" Be brief. Be sharp.`
+                },
+                {
+                    id: 'gain',
+                    name: 'GAIN',
+                    icon: '⚪',
+                    role: 'Signal Amplifier',
+                    color: '#ff8000',
+                    systemPrompt: `You are GAIN, the signal amplifier. You talk like a mixing board operator or signal engineer. You boost weak signals that matter and identify noise.
+
+You'll receive all outputs. Your job: Find what someone spotted at "low volume" that's actually load-bearing. Point out the detail that seemed minor but is critical.
+
+Format like: "LATTICE caught something at -20dB that's actually structural: [thing]" or "Most of CATALOG's entity list is noise except the [X] connection."`
+                },
+                {
+                    id: 'schema',
+                    name: 'SCHEMA',
+                    icon: '⬢',
+                    role: 'Information Architect',
+                    color: '#00ffaa',
+                    systemPrompt: `You are SCHEMA, the information architect. You're a database designer meets librarian on acid. You see taxonomies, data flows, optimal file structures, and information relationships.
+
+You'll receive all persona outputs AND the original input. Your job: Design how this information should be ORGANIZED and STORED.
+
+Consider:
+- File structure: Single file or multiple? Nested folders? What naming convention?
+- Format recommendations: Which outputs work best as MD, JSON, CSV, plain text?
+- Relationships: What should link to what? What clusters together?
+- Data flow: If this was a repo, how should it be architected?
+- Breakdown strategy: How granular should the exports be?
+
+Format your response like a technical architect presenting a schema. Use notation like:
+/root
+  /themes [from MOTIF] → markdown
+  /entities [from CATALOG] → JSON + CSV
+  /perspectives [from PRISM] → individual .txt files
+  /synthesis [from hidden layer] → single markdown
+
+Be specific about file types, organization, and WHY that structure makes sense.`
+                }
+            ]
+        };
+
+        async function callClaude(systemPrompt, userPrompt) {
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    system: systemPrompt,
+                    messages: [
+                        { role: "user", content: userPrompt }
+                    ],
+                })
+            });
+
+            const data = await response.json();
+            return data.content[0].text;
+        }
+
+        async function activateSwarm() {
+            const input = document.getElementById('input').value.trim();
+            if (!input && !uploadedImageData) {
+                alert('Need input or uploaded file/image to process!');
+                return;
+            }
+
+            speak("Activating swarm");
+            
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.textContent = 'INITIALIZING SWARM...';
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('frontLine').innerHTML = '';
+            document.getElementById('hiddenLayer').innerHTML = '';
+
+            swarmResults = {
+                timestamp: sessionTimestamp,
+                input: input,
+                hasImage: !!uploadedImageData,
+                frontLine: {},
+                hiddenLayer: {}
+            };
+
+            // Front line parallel
+            status.textContent = 'FRONT LINE PROCESSING...';
+            
+            const frontLinePromises = personas.frontLine.map(async (persona) => {
+                const card = createPersonaCard(persona, true);
+                document.getElementById('frontLine').appendChild(card);
+                
+                const result = await callClaudeWithImage(persona.systemPrompt, input);
+                swarmResults.frontLine[persona.id] = result;
+                updatePersonaCard(persona.id, result);
+            });
+
+            await Promise.all(frontLinePromises);
+
+            // Hidden layer sequential
+            status.textContent = 'HIDDEN LAYER SYNTHESIZING...';
+            
+            const frontLineContext = Object.entries(swarmResults.frontLine)
+                .map(([id, result]) => `${id.toUpperCase()}: ${result}`)
+                .join('\n\n---\n\n');
+
+            for (const persona of personas.hiddenLayer) {
+                const card = createPersonaCard(persona, false);
+                document.getElementById('hiddenLayer').appendChild(card);
+                
+                const contextPrompt = `FRONT LINE OUTPUTS:\n\n${frontLineContext}\n\n---\n\nORIGINAL INPUT:\n${input}`;
+                const result = await callClaudeWithImage(persona.systemPrompt, contextPrompt);
+                swarmResults.hiddenLayer[persona.id] = result;
+                updatePersonaCard(persona.id, result);
+            }
+
+            status.textContent = '✓ SWARM PROCESSING COMPLETE';
+            speak("Processing complete");
+        }
+
+        function createPersonaCard(persona, isFrontLine) {
+            const card = document.createElement('div');
+            card.className = `persona-card ${persona.id}`;
+            card.id = `card-${persona.id}`;
+            card.style.color = persona.color;
+            
+            card.innerHTML = `
+                <div class="persona-header">
+                    <span class="persona-icon">${persona.icon}</span>
+                    <span class="persona-name">${persona.name}</span>
+                </div>
+                <div class="persona-role">${persona.role}</div>
+                <div class="persona-content">
+                    <div class="loading">PROCESSING</div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function updatePersonaCard(personaId, content) {
+            const card = document.getElementById(`card-${personaId}`);
+            const contentDiv = card.querySelector('.persona-content');
+            contentDiv.textContent = content;
+        }
+
+        function clearAll() {
+            document.getElementById('input').value = '';
+            document.getElementById('fileUpload').value = '';
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
+            uploadedImageData = null;
+            swarmResults = {};
+            speak("Cleared");
+        }
+
+        function generateFullReport() {
+            let report = `THE SWARM - Pattern Processing Report\n`;
+            report += `Session: ${swarmResults.timestamp}\n`;
+            report += `${'='.repeat(60)}\n\n`;
+            report += `INPUT:\n${swarmResults.input}\n\n`;
+            report += `${'='.repeat(60)}\n\n`;
+            
+            report += `FRONT LINE ANALYSIS\n${'='.repeat(60)}\n\n`;
+            for (const [id, result] of Object.entries(swarmResults.frontLine)) {
+                const persona = personas.frontLine.find(p => p.id === id);
+                report += `${persona.icon} ${persona.name} - ${persona.role}\n`;
+                report += `${'-'.repeat(60)}\n`;
+                report += `${result}\n\n`;
+            }
+            
+            report += `\nHIDDEN LAYER SYNTHESIS\n${'='.repeat(60)}\n\n`;
+            for (const [id, result] of Object.entries(swarmResults.hiddenLayer)) {
+                const persona = personas.hiddenLayer.find(p => p.id === id);
+                report += `${persona.icon} ${persona.name} - ${persona.role}\n`;
+                report += `${'-'.repeat(60)}\n`;
+                report += `${result}\n\n`;
+            }
+            
+            return report;
+        }
+
+        function exportTXT() {
+            const content = generateFullReport();
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `swarm_${sessionTimestamp}.txt`;
+            a.click();
+            speak("Text file exported");
+        }
+
+        function exportMD() {
+            let md = `# THE SWARM - Pattern Processing Report\n\n`;
+            md += `**Session:** ${swarmResults.timestamp}\n\n`;
+            md += `---\n\n## INPUT\n\n${swarmResults.input}\n\n`;
+            md += `---\n\n## FRONT LINE ANALYSIS\n\n`;
+            
+            for (const [id, result] of Object.entries(swarmResults.frontLine)) {
+                const persona = personas.frontLine.find(p => p.id === id);
+                md += `### ${persona.icon} ${persona.name} - ${persona.role}\n\n`;
+                md += `${result}\n\n`;
+            }
+            
+            md += `---\n\n## HIDDEN LAYER SYNTHESIS\n\n`;
+            for (const [id, result] of Object.entries(swarmResults.hiddenLayer)) {
+                const persona = personas.hiddenLayer.find(p => p.id === id);
+                md += `### ${persona.icon} ${persona.name} - ${persona.role}\n\n`;
+                md += `${result}\n\n`;
+            }
+            
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `swarm_${sessionTimestamp}.md`;
+            a.click();
+            speak("Markdown exported");
+        }
+
+        function exportJSON() {
+            const json = JSON.stringify(swarmResults, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `swarm_${sessionTimestamp}.json`;
+            a.click();
+            speak("JSON exported");
+        }
+
+        function exportYAML() {
+            let yaml = `timestamp: ${swarmResults.timestamp}\n\n`;
+            yaml += `input: |\n  ${swarmResults.input.replace(/\n/g, '\n  ')}\n\n`;
+            yaml += `frontLine:\n`;
+            
+            for (const [id, result] of Object.entries(swarmResults.frontLine)) {
+                yaml += `  ${id}: |\n    ${result.replace(/\n/g, '\n    ')}\n\n`;
+            }
+            
+            yaml += `hiddenLayer:\n`;
+            for (const [id, result] of Object.entries(swarmResults.hiddenLayer)) {
+                yaml += `  ${id}: |\n    ${result.replace(/\n/g, '\n    ')}\n\n`;
+            }
+            
+            const blob = new Blob([yaml], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `swarm_${sessionTimestamp}.yaml`;
+            a.click();
+            speak("YAML exported");
+        }
+
+        function exportCSV() {
+            let csv = 'Persona,Role,Layer,Output\n';
+            
+            for (const [id, result] of Object.entries(swarmResults.frontLine)) {
+                const persona = personas.frontLine.find(p => p.id === id);
+                const escaped = result.replace(/"/g, '""');
+                csv += `"${persona.name}","${persona.role}","Front Line","${escaped}"\n`;
+            }
+            
+            for (const [id, result] of Object.entries(swarmResults.hiddenLayer)) {
+                const persona = personas.hiddenLayer.find(p => p.id === id);
+                const escaped = result.replace(/"/g, '""');
+                csv += `"${persona.name}","${persona.role}","Hidden Layer","${escaped}"\n`;
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `swarm_${sessionTimestamp}.csv`;
+            a.click();
+            speak("CSV exported");
+        }
+
+        // File and image upload processing
+        let uploadedImageData = null;
+
+        async function processUploads() {
+            speak("Processing uploads");
+            const fileInput = document.getElementById('fileUpload');
+            const imageInput = document.getElementById('imageUpload');
+            const textarea = document.getElementById('input');
+            
+            // Process text files
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const text = await readFileAsText(file);
+                if (text) {
+                    textarea.value += (textarea.value ? '\n\n--- UPLOADED FILE ---\n\n' : '') + text;
+                    speak("File loaded");
+                }
+            }
+            
+            // Process images
+            if (imageInput.files.length > 0) {
+                const file = imageInput.files[0];
+                const base64 = await readFileAsBase64(file);
+                if (base64) {
+                    uploadedImageData = {
+                        type: "image",
+                        source: {
+                            type: "base64",
+                            media_type: file.type,
+                            data: base64.split(',')[1]
+                        }
+                    };
+                    textarea.value += (textarea.value ? '\n\n' : '') + '[IMAGE UPLOADED - will be analyzed by all personas]\n';
+                    speak("Image loaded");
+                }
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    
+                    // Handle different file types
+                    if (file.name.endsWith('.json')) {
+                        try {
+                            const json = JSON.parse(text);
+                            resolve(JSON.stringify(json, null, 2));
+                        } catch {
+                            resolve(text);
+                        }
+                    } else if (file.name.endsWith('.csv')) {
+                        resolve(text);
+                    } else if (file.name.endsWith('.pdf')) {
+                        // For PDF, just note it - actual extraction would need a library
+                        resolve('[PDF UPLOADED: ' + file.name + ']\nNote: For full PDF text extraction, use the Python version or copy-paste the text.');
+                    } else if (file.name.endsWith('.docx')) {
+                        resolve('[DOCX UPLOADED: ' + file.name + ']\nNote: For full DOCX text extraction, use the Python version or copy-paste the text.');
+                    } else {
+                        resolve(text);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Update callClaude to handle images
+        async function callClaudeWithImage(systemPrompt, userPrompt) {
+            const messages = [];
+            
+            if (uploadedImageData) {
+                messages.push({
+                    role: "user",
+                    content: [
+                        uploadedImageData,
+                        { type: "text", text: userPrompt }
+                    ]
+                });
+            } else {
+                messages.push({
+                    role: "user",
+                    content: userPrompt
+                });
+            }
+
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1000,
+                    system: systemPrompt,
+                    messages: messages
+                })
+            });
+
+            const data = await response.json();
+            return data.content[0].text;
+        }
+    </script>
+</body>
+</html>
