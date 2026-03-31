@@ -264,7 +264,7 @@ pip install -r requirements.txt
 **Gradio not starting**
 ```bash
 # Try specific version
-pip install gradio==4.44.0
+pip install gradio==6.7.0
 ```
 
 ## Roadmap
